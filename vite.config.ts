@@ -1,10 +1,12 @@
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vitest/config';
+import { loadEnv } from 'vite';
 import { sveltekit } from '@sveltejs/kit/vite';
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
 	plugins: [tailwindcss(), sveltekit()],
 	test: {
+		env: loadEnv(mode, process.cwd(), ''),
 		expect: { requireAssertions: true },
 		projects: [
 			{
@@ -18,4 +20,4 @@ export default defineConfig({
 			}
 		]
 	}
-});
+}));
