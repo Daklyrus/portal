@@ -1,2 +1,32 @@
 @import 'tailwindcss';
 @plugin '@tailwindcss/forms';
+
+/* Design-Tokens aus design-system/corvion-tool/MASTER.md — einzige Farbquelle */
+@theme {
+	--font-sans: 'Open Sans', ui-sans-serif, system-ui, sans-serif;
+	--font-display: 'Poppins', ui-sans-serif, system-ui, sans-serif;
+
+	--color-primary: #0f172a;
+	--color-on-primary: #ffffff;
+	--color-secondary: #334155;
+	--color-accent: #0369a1;
+	--color-background: #f8fafc;
+	--color-foreground: #020617;
+	--color-muted: #e8ecf1;
+	--color-border: #e2e8f0;
+	--color-destructive: #dc2626;
+	--color-ring: #0f172a;
+}
+
+@layer base {
+	body {
+		background-color: var(--color-background);
+		color: var(--color-foreground);
+		font-family: var(--font-sans);
+	}
+	h1,
+	h2,
+	h3 {
+		font-family: var(--font-display);
+	}
+}
