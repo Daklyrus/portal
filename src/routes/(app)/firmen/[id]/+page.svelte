@@ -3,7 +3,47 @@
 	import { resolve } from '$app/paths';
 	import { Pencil, Plus, Star, Trash2 } from 'lucide-svelte';
 	import ContactForm from '$lib/components/ContactForm.svelte';
+	import ContractForm from '$lib/components/ContractForm.svelte';
+	import DeadlineBadge from '$lib/components/DeadlineBadge.svelte';
 	import type { ActionData, PageData } from './$types';
+
+	const euro = new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' });
+	const statusLabels: Record<string, string> = {
+		draft: 'Entwurf',
+		active: 'Aktiv',
+		cancelled: 'Gekündigt',
+		ended: 'Beendet'
+	};
+	const statusTones: Record<string, string> = {
+		draft: 'bg-muted text-secondary',
+		active: 'bg-emerald-100 text-emerald-800',
+		cancelled: 'bg-destructive/10 text-destructive',
+		ended: 'bg-muted text-secondary'
+	};
+
+	function contractToValues(contract: {
+		title: string;
+		description: string | null;
+		status: string;
+		startDate: string;
+		initialTermMonths: number;
+		renewalTermMonths: number;
+		noticePeriodMonths: number;
+		monthlyFeeCents: number;
+		includedServices: string | null;
+	}): Record<string, string | null> {
+		return {
+			title: contract.title,
+			description: contract.description,
+			status: contract.status,
+			startDate: contract.startDate,
+			initialTermMonths: String(contract.initialTermMonths),
+			renewalTermMonths: String(contract.renewalTermMonths),
+			noticePeriodMonths: String(contract.noticePeriodMonths),
+			monthlyFee: (contract.monthlyFeeCents / 100).toFixed(2).replace('.', ','),
+			includedServices: contract.includedServices
+		};
+	}
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -25,6 +65,17 @@
 	let contactErrors = $derived(form && 'contactErrors' in form ? form.contactErrors : {});
 	let contactValues = $derived(
 		form && 'contactValues' in form ? (form.contactValues as Record<string, string>) : undefined
+	);
+
+	let editingContract = $derived.by<string | null>(() => {
+		if (form && 'editingContract' in form && typeof form.editingContract === 'string') {
+			return form.editingContract;
+		}
+		return null;
+	});
+	let contractErrors = $derived(form && 'contractErrors' in form ? form.contractErrors : {});
+	let contractValues = $derived(
+		form && 'contractValues' in form ? (form.contractValues as Record<string, string>) : undefined
 	);
 </script>
 
@@ -212,6 +263,120 @@
 								}}
 							>
 								<input type="hidden" name="contactId" value={contact.id} />
+								<button type="submit" class="cursor-pointer font-semibold text-destructive hover:underline">
+									Löschen
+								</button>
+							</form>
+						</div>
+					{/if}
+				</li>
+			{/each}
+		</ul>
+	{/if}
+</section>
+
+<section class="mt-6 rounded-lg border border-border bg-white p-6">
+	<div class="flex items-center justify-between gap-4">
+		<h2 class="font-display text-lg font-semibold">Verträge</h2>
+		{#if editingContract !== 'new'}
+			<button
+				type="button"
+				onclick={() => (editingContract = 'new')}
+				class="flex cursor-pointer items-center gap-2 rounded-md border border-border bg-white px-3 py-2 text-sm font-semibold transition-colors duration-150 hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring"
+			>
+				<Plus size={16} aria-hidden="true" />
+				Neuer Vertrag
+			</button>
+		{/if}
+	</div>
+
+	{#if editingContract === 'new'}
+		<div class="mt-4">
+			<ContractForm
+				action="?/createContract"
+				values={contractValues}
+				errors={contractErrors}
+				submitLabel="Vertrag anlegen"
+				oncancel={() => (editingContract = null)}
+			/>
+		</div>
+	{/if}
+
+	{#if data.contracts.length === 0 && editingContract !== 'new'}
+		<p class="mt-4 text-sm text-secondary">Noch keine Verträge hinterlegt.</p>
+	{:else}
+		<ul class="mt-4 space-y-3">
+			{#each data.contracts as { contract, deadlines } (contract.id)}
+				<li class="rounded-lg border border-border p-4">
+					{#if editingContract === contract.id}
+						<ContractForm
+							action="?/updateContract"
+							contractId={contract.id}
+							values={contractValues ?? contractToValues(contract)}
+							errors={contractErrors}
+							submitLabel="Änderungen speichern"
+							oncancel={() => (editingContract = null)}
+						/>
+					{:else}
+						<div class="flex flex-wrap items-start justify-between gap-2">
+							<div>
+								<p class="font-semibold">
+									{contract.title}
+									<span
+										class="ml-1 inline-flex rounded-full px-2 py-0.5 text-xs font-semibold {statusTones[contract.status]}"
+									>
+										{statusLabels[contract.status]}
+									</span>
+								</p>
+								<p class="mt-1 text-sm text-secondary">
+									Seit {new Date(contract.startDate).toLocaleDateString('de-DE')} ·
+									{contract.initialTermMonths} Monate Laufzeit ·
+									{contract.renewalTermMonths > 0
+										? `verlängert sich um ${contract.renewalTermMonths} Monate`
+										: 'läuft aus'} ·
+									{contract.noticePeriodMonths} Monate Kündigungsfrist
+								</p>
+							</div>
+							<p class="font-semibold">{euro.format(contract.monthlyFeeCents / 100)}<span class="text-sm font-normal text-secondary"> / Monat</span></p>
+						</div>
+						{#if contract.status === 'active'}
+							<div class="mt-2">
+								<DeadlineBadge {deadlines} />
+							</div>
+						{/if}
+						{#if contract.includedServices}
+							<p class="mt-2 text-sm text-secondary">{contract.includedServices}</p>
+						{/if}
+						<div class="mt-3 flex flex-wrap gap-3 text-sm">
+							<button
+								type="button"
+								onclick={() => (editingContract = contract.id)}
+								class="cursor-pointer font-semibold text-secondary hover:underline"
+							>
+								Bearbeiten
+							</button>
+							{#if contract.status === 'active'}
+								<form
+									method="post"
+									action="?/cancelContract"
+									use:enhance={({ cancel }) => {
+										if (!confirm(`Vertrag „${contract.title}" als gekündigt markieren?`)) cancel();
+									}}
+								>
+									<input type="hidden" name="contractId" value={contract.id} />
+									<button type="submit" class="cursor-pointer font-semibold text-secondary hover:underline">
+										Als gekündigt markieren
+									</button>
+								</form>
+							{/if}
+							<form
+								method="post"
+								action="?/deleteContract"
+								use:enhance={({ cancel }) => {
+									if (!confirm(`Vertrag „${contract.title}" endgültig löschen?`)) cancel();
+								}}
+							>
+								<input type="hidden" name="contractId" value={contract.id} />
 								<button type="submit" class="cursor-pointer font-semibold text-destructive hover:underline">
 									Löschen
 								</button>
