@@ -15,7 +15,9 @@ export default defineConfig(({ mode }) => ({
 					name: 'server',
 					environment: 'node',
 					include: ['src/**/*.{test,spec}.{js,ts}'],
-					exclude: ['src/**/*.svelte.{test,spec}.{js,ts}']
+					exclude: ['src/**/*.svelte.{test,spec}.{js,ts}'],
+					// Integrationstests teilen sich eine Test-DB — nie parallel laufen lassen
+					fileParallelism: false
 				}
 			}
 		]
