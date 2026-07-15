@@ -15,6 +15,13 @@ import {
 	markContractCancelled,
 	updateContract
 } from '$lib/server/contracts';
+import {
+	createDocument,
+	deleteDocument,
+	getDocument,
+	listDocuments
+} from '$lib/server/documents/documents';
+import { deleteStoredFile, saveUpload, UploadError } from '$lib/server/documents/storage';
 import { contactSchema } from '$lib/validation/contact';
 import { contractSchema } from '$lib/validation/contract';
 import type { Actions, PageServerLoad } from './$types';
@@ -25,7 +32,8 @@ export const load: PageServerLoad = async ({ params }) => {
 	return {
 		company,
 		contacts: await listContacts(db, params.id),
-		contracts: await listContractsWithDeadlines(db, params.id, new Date())
+		contracts: await listContractsWithDeadlines(db, params.id, new Date()),
+		documents: await listDocuments(db, params.id)
 	};
 };
 
@@ -118,5 +126,39 @@ export const actions: Actions = {
 		const form = await request.formData();
 		await deleteContract(db, String(form.get('contractId') ?? ''));
 		return { contractSaved: true };
+	},
+
+	uploadDocument: async ({ params, request, locals }) => {
+		const form = await request.formData();
+		const file = form.get('file');
+		if (!(file instanceof File) || file.size === 0) {
+			return fail(400, { documentError: 'Datei auswählen.' });
+		}
+		try {
+			const stored = await saveUpload(file, params.id);
+			await createDocument(db, {
+				companyId: params.id,
+				fileName: file.name,
+				storagePath: stored.storagePath,
+				mimeType: stored.mimeType,
+				sizeBytes: stored.sizeBytes,
+				sharedWithCustomer: form.get('sharedWithCustomer') === 'on',
+				uploadedById: locals.user?.id ?? null
+			});
+		} catch (err) {
+			if (err instanceof UploadError) return fail(400, { documentError: err.message });
+			throw err;
+		}
+		return { documentSaved: true };
+	},
+
+	deleteDocument: async ({ request }) => {
+		const form = await request.formData();
+		const document = await getDocument(db, String(form.get('documentId') ?? ''));
+		if (document) {
+			await deleteDocument(db, document.id);
+			await deleteStoredFile(document.storagePath);
+		}
+		return { documentSaved: true };
 	}
 };

@@ -1,13 +1,19 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
-	import { Pencil, Plus, Star, Trash2 } from 'lucide-svelte';
+	import { Download, Pencil, Plus, Star, Trash2, Upload } from 'lucide-svelte';
 	import ContactForm from '$lib/components/ContactForm.svelte';
 	import ContractForm from '$lib/components/ContractForm.svelte';
 	import DeadlineBadge from '$lib/components/DeadlineBadge.svelte';
 	import type { ActionData, PageData } from './$types';
 
 	const euro = new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' });
+
+	function formatBytes(bytes: number): string {
+		if (bytes < 1024) return `${bytes} B`;
+		if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+		return `${(bytes / 1024 / 1024).toLocaleString('de-DE', { maximumFractionDigits: 1 })} MB`;
+	}
 	const statusLabels: Record<string, string> = {
 		draft: 'Entwurf',
 		active: 'Aktiv',
@@ -386,5 +392,101 @@
 				</li>
 			{/each}
 		</ul>
+	{/if}
+</section>
+
+<section class="mt-6 rounded-lg border border-border bg-white p-6">
+	<h2 class="font-display text-lg font-semibold">Dokumente</h2>
+
+	<form
+		method="post"
+		action="?/uploadDocument"
+		enctype="multipart/form-data"
+		use:enhance
+		class="mt-4 flex flex-wrap items-end gap-3 rounded-lg border border-border bg-muted/40 p-4"
+	>
+		<div>
+			<label for="file" class="block text-sm font-semibold">Datei (max. 25 MB)</label>
+			<input
+				id="file"
+				name="file"
+				type="file"
+				required
+				class="mt-1 block cursor-pointer text-sm file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-2 file:text-sm file:font-semibold file:text-on-primary hover:file:bg-secondary"
+			/>
+		</div>
+		<label class="flex items-center gap-2 pb-2 text-sm">
+			<input
+				type="checkbox"
+				name="sharedWithCustomer"
+				class="rounded border-border text-accent focus:ring-accent"
+			/>
+			Für Portal freigeben
+		</label>
+		<button
+			type="submit"
+			class="flex cursor-pointer items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-semibold text-on-primary transition-colors duration-150 hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+		>
+			<Upload size={16} aria-hidden="true" />
+			Hochladen
+		</button>
+		{#if form && 'documentError' in form && form.documentError}
+			<p class="w-full text-sm text-destructive" role="alert">{form.documentError}</p>
+		{/if}
+	</form>
+
+	{#if data.documents.length === 0}
+		<p class="mt-4 text-sm text-secondary">Noch keine Dokumente hinterlegt.</p>
+	{:else}
+		<div class="mt-4 overflow-x-auto">
+			<table class="w-full text-left text-sm">
+				<thead class="border-b border-border text-xs uppercase tracking-wide text-secondary">
+					<tr>
+						<th scope="col" class="py-2 pr-4">Datei</th>
+						<th scope="col" class="py-2 pr-4">Größe</th>
+						<th scope="col" class="py-2 pr-4">Hochgeladen</th>
+						<th scope="col" class="py-2 pr-4">Portal</th>
+						<th scope="col" class="py-2"><span class="sr-only">Aktionen</span></th>
+					</tr>
+				</thead>
+				<tbody>
+					{#each data.documents as document (document.id)}
+						<tr class="border-b border-border last:border-b-0">
+							<td class="py-2 pr-4 font-semibold">{document.fileName}</td>
+							<td class="py-2 pr-4">{formatBytes(document.sizeBytes)}</td>
+							<td class="py-2 pr-4">{new Date(document.createdAt).toLocaleDateString('de-DE')}</td>
+							<td class="py-2 pr-4">{document.sharedWithCustomer ? 'freigegeben' : '–'}</td>
+							<td class="py-2">
+								<div class="flex items-center gap-3">
+									<a
+										href={resolve('/(app)/firmen/[id]/dokumente/[docId]', {
+											id: company.id,
+											docId: document.id
+										})}
+										download={document.fileName}
+										class="flex cursor-pointer items-center gap-1 font-semibold text-accent hover:underline"
+									>
+										<Download size={14} aria-hidden="true" />
+										Herunterladen
+									</a>
+									<form
+										method="post"
+										action="?/deleteDocument"
+										use:enhance={({ cancel }) => {
+											if (!confirm(`„${document.fileName}" löschen?`)) cancel();
+										}}
+									>
+										<input type="hidden" name="documentId" value={document.id} />
+										<button type="submit" class="cursor-pointer font-semibold text-destructive hover:underline">
+											Löschen
+										</button>
+									</form>
+								</div>
+							</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		</div>
 	{/if}
 </section>
