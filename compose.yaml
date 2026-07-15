@@ -1,0 +1,14 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: always
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: corvion
+      POSTGRES_PASSWORD: dev-only-password
+      POSTGRES_DB: corvion
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+volumes:
+  pgdata:

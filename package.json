@@ -1,5 +1,5 @@
 {
-	"name": "corvion-app",
+	"name": "corvion-tool",
 	"private": true,
 	"version": "0.0.1",
 	"type": "module",
@@ -9,15 +9,40 @@
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
+		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+		"test:unit": "vitest",
+		"test": "npm run test:unit -- --run",
+		"db:start": "docker compose up",
+		"db:push": "drizzle-kit push",
+		"db:generate": "drizzle-kit generate",
+		"db:migrate": "drizzle-kit migrate",
+		"db:studio": "drizzle-kit studio",
+		"auth:schema": "npx @better-auth/cli generate --config src/lib/server/auth.ts --output src/lib/server/db/auth.schema.ts --yes"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-auto": "^7.0.0",
 		"@sveltejs/kit": "^2.50.2",
 		"@sveltejs/vite-plugin-svelte": "^6.2.4",
+		"@tailwindcss/forms": "^0.5.11",
+		"@tailwindcss/vite": "^4.1.18",
+		"@types/node": "^22",
+		"better-auth": "^1.4.18",
+		"drizzle-kit": "^0.31.8",
+		"drizzle-orm": "^0.45.1",
 		"svelte": "^5.49.2",
 		"svelte-check": "^4.3.6",
+		"tailwindcss": "^4.1.18",
+		"tsx": "^4.23.1",
 		"typescript": "^5.9.3",
-		"vite": "^7.3.1"
+		"vite": "^7.3.1",
+		"vitest": "^4.0.18"
+	},
+	"dependencies": {
+		"@fontsource/open-sans": "^5.2.7",
+		"@fontsource/poppins": "^5.2.7",
+		"date-fns": "^4.4.0",
+		"lucide-svelte": "^1.0.1",
+		"postgres": "^3.4.8",
+		"zod": "^4.4.3"
 	}
 }
