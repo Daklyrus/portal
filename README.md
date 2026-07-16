@@ -27,3 +27,30 @@ Beim ersten Login verlangt das Tool die Einrichtung der Zwei-Faktor-Authentifizi
 | `npm run db:studio` | Drizzle Studio (DB-GUI) |
 
 Arbeitskonventionen stehen in [CLAUDE.md](CLAUDE.md), der Implementierungsplan in [docs/superpowers/plans/](docs/superpowers/plans/).
+
+## Deployment (Hetzner-VPS o. ä.)
+
+Der Produktions-Stack läuft komplett in Docker: App (Node), PostgreSQL 16 und Caddy als Reverse Proxy mit automatischem Let's-Encrypt-Zertifikat. Migrationen laufen bei jedem App-Start automatisch.
+
+1. Server vorbereiten: Docker installieren, DNS-A-Record der Domain (z. B. `tool.corvion.de`) auf den Server zeigen lassen, Firewall nur 80/443 (und SSH) öffnen.
+2. Repository auf den Server klonen.
+3. `.env.production.example` nach `.env.production` kopieren und ausfüllen (Secrets mit `openssl rand -hex 32` erzeugen).
+4. Starten:
+   ```sh
+   docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
+   ```
+5. Ersten Admin anlegen (einmalig):
+   ```sh
+   docker compose -f docker-compose.prod.yml --env-file .env.production exec app node scripts/seed-admin.mjs
+   ```
+6. Anmelden, 2FA einrichten, Seed-Passwort ändern.
+
+**Update einspielen:** `git pull`, dann Befehl aus Schritt 4 erneut ausführen.
+
+**Backups:** Die Daten liegen in den Docker-Volumes `corvion-prod_pgdata` (Datenbank) und `corvion-prod_uploads` (Dokumente). Beispiel für ein tägliches DB-Dump per Cron:
+
+```sh
+docker compose -f docker-compose.prod.yml --env-file .env.production exec -T db pg_dump -U corvion corvion | gzip > backup-$(date +%F).sql.gz
+```
+
+Dumps und eine Kopie des Upload-Volumes gehören auf ein anderes System (z. B. euer bestehendes Backup-Ziel).
