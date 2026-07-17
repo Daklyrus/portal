@@ -27,32 +27,42 @@ function resolveInside(root: string, relativePath: string): string {
 	return absolute;
 }
 
+export async function saveBuffer(
+	buffer: Buffer,
+	fileName: string,
+	subdir: string,
+	mimeType: string,
+	root: string = DEFAULT_UPLOAD_ROOT
+): Promise<StoredFile> {
+	if (buffer.length === 0) throw new UploadError('Datei ist leer.');
+	if (buffer.length > MAX_BYTES) throw new UploadError('Datei ist größer als 25 MB.');
+
+	const extension = extname(fileName).toLowerCase();
+	if (BLOCKED_EXTENSIONS.has(extension)) {
+		throw new UploadError('Dieser Dateityp ist nicht erlaubt.');
+	}
+
+	// Pfad besteht nur aus subdir (UUID aus der DB) und frischer UUID — nie aus Nutzereingaben
+	const safeExtension = /^\.[a-z0-9]{1,10}$/.test(extension) ? extension : '';
+	const storagePath = join(subdir, `${randomUUID()}${safeExtension}`);
+	const absolute = resolveInside(root, storagePath);
+
+	await mkdir(join(resolve(root), subdir), { recursive: true });
+	await writeFile(absolute, buffer);
+
+	return {
+		storagePath,
+		mimeType: mimeType || 'application/octet-stream',
+		sizeBytes: buffer.length
+	};
+}
+
 export async function saveUpload(
 	file: File,
 	companyId: string,
 	root: string = DEFAULT_UPLOAD_ROOT
 ): Promise<StoredFile> {
-	if (file.size === 0) throw new UploadError('Datei ist leer.');
-	if (file.size > MAX_BYTES) throw new UploadError('Datei ist größer als 25 MB.');
-
-	const extension = extname(file.name).toLowerCase();
-	if (BLOCKED_EXTENSIONS.has(extension)) {
-		throw new UploadError('Dieser Dateityp ist nicht erlaubt.');
-	}
-
-	// Pfad besteht nur aus companyId (UUID aus der DB) und frischer UUID — nie aus Nutzereingaben
-	const safeExtension = /^\.[a-z0-9]{1,10}$/.test(extension) ? extension : '';
-	const storagePath = join(companyId, `${randomUUID()}${safeExtension}`);
-	const absolute = resolveInside(root, storagePath);
-
-	await mkdir(join(resolve(root), companyId), { recursive: true });
-	await writeFile(absolute, Buffer.from(await file.arrayBuffer()));
-
-	return {
-		storagePath,
-		mimeType: file.type || 'application/octet-stream',
-		sizeBytes: file.size
-	};
+	return saveBuffer(Buffer.from(await file.arrayBuffer()), file.name, companyId, file.type, root);
 }
 
 export async function deleteStoredFile(
