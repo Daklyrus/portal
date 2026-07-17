@@ -1,6 +1,7 @@
 import {
 	pgTable,
 	pgEnum,
+	pgSequence,
 	text,
 	uuid,
 	boolean,
@@ -8,6 +9,7 @@ import {
 	date,
 	timestamp
 } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 import { user } from './auth.schema';
 
 const timestamps = {
@@ -83,6 +85,87 @@ export const documents = pgTable('documents', {
 	createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
 });
 
+export const ticketStatus = pgEnum('ticket_status', [
+	'new',
+	'in_progress',
+	'waiting_customer',
+	'resolved',
+	'closed'
+]);
+export const ticketPriority = pgEnum('ticket_priority', ['normal', 'high', 'critical']);
+export const messageKind = pgEnum('message_kind', ['inbound', 'outbound', 'note']);
+
+export const ticketNumberSeq = pgSequence('ticket_number_seq', { startWith: 1001 });
+
+export const tickets = pgTable('tickets', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	number: integer('number')
+		.notNull()
+		.unique()
+		.default(sql`nextval('ticket_number_seq')`),
+	subject: text('subject').notNull(),
+	status: ticketStatus('status').default('new').notNull(),
+	priority: ticketPriority('priority').default('normal').notNull(),
+	companyId: uuid('company_id').references(() => companies.id, { onDelete: 'set null' }),
+	contactId: uuid('contact_id').references(() => contacts.id, { onDelete: 'set null' }),
+	assignedToId: text('assigned_to_id').references(() => user.id, { onDelete: 'set null' }),
+	requesterEmail: text('requester_email'),
+	requesterName: text('requester_name'),
+	conversationId: text('conversation_id'),
+	firstRespondedAt: timestamp('first_responded_at', { withTimezone: true }),
+	closedAt: timestamp('closed_at', { withTimezone: true }),
+	...timestamps
+});
+
+export const ticketMessages = pgTable('ticket_messages', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	ticketId: uuid('ticket_id')
+		.notNull()
+		.references(() => tickets.id, { onDelete: 'cascade' }),
+	kind: messageKind('kind').notNull(),
+	authorId: text('author_id').references(() => user.id, { onDelete: 'set null' }),
+	fromEmail: text('from_email'),
+	toEmails: text('to_emails'),
+	subject: text('subject'),
+	bodyHtml: text('body_html').notNull(),
+	graphMessageId: text('graph_message_id').unique(),
+	internetMessageId: text('internet_message_id'),
+	sentAt: timestamp('sent_at', { withTimezone: true }),
+	createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
+});
+
+export const ticketAttachments = pgTable('ticket_attachments', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	messageId: uuid('message_id')
+		.notNull()
+		.references(() => ticketMessages.id, { onDelete: 'cascade' }),
+	fileName: text('file_name').notNull(),
+	storagePath: text('storage_path').notNull(),
+	mimeType: text('mime_type').notNull(),
+	sizeBytes: integer('size_bytes').notNull(),
+	createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
+});
+
+export const timeEntries = pgTable('time_entries', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	ticketId: uuid('ticket_id')
+		.notNull()
+		.references(() => tickets.id, { onDelete: 'cascade' }),
+	userId: text('user_id').references(() => user.id, { onDelete: 'set null' }),
+	minutes: integer('minutes').notNull(),
+	note: text('note'),
+	billable: boolean('billable').default(true).notNull(),
+	workDate: date('work_date', { mode: 'string' }).notNull(),
+	createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
+});
+
+// Key-Value-Ablage für Graph-Delta-Links des Ticket-Syncs
+export const syncState = pgTable('sync_state', {
+	key: text('key').primaryKey(),
+	value: text('value').notNull(),
+	updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull()
+});
+
 export type Company = typeof companies.$inferSelect;
 export type NewCompany = typeof companies.$inferInsert;
 export type Contact = typeof contacts.$inferSelect;
@@ -91,5 +174,14 @@ export type Contract = typeof contracts.$inferSelect;
 export type NewContract = typeof contracts.$inferInsert;
 export type Document = typeof documents.$inferSelect;
 export type NewDocument = typeof documents.$inferInsert;
+export type Ticket = typeof tickets.$inferSelect;
+export type NewTicket = typeof tickets.$inferInsert;
+export type TicketMessage = typeof ticketMessages.$inferSelect;
+export type NewTicketMessage = typeof ticketMessages.$inferInsert;
+export type TicketAttachment = typeof ticketAttachments.$inferSelect;
+export type TimeEntry = typeof timeEntries.$inferSelect;
+export type NewTimeEntry = typeof timeEntries.$inferInsert;
+export type TicketStatus = Ticket['status'];
+export type TicketPriority = Ticket['priority'];
 
 export * from './auth.schema';
