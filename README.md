@@ -1,6 +1,8 @@
 # Corvion Tool
 
-Internes PSA-Tool für Corvion: Kundenakte mit Firmen, Ansprechpartnern, Verträgen (inkl. Kündigungsfristen-Überwachung) und Dokumentenablage. Stufe 2 bringt das Ticketsystem, Stufe 3 das Kundenportal.
+Internes PSA-Tool für Corvion: Kundenakte mit Firmen, Ansprechpartnern, Verträgen (inkl. Kündigungsfristen-Überwachung), Dokumentenablage sowie Ticketsystem mit E-Mail-Anbindung (Microsoft Graph, Shared Mailbox), SLA-Überwachung und Zeiterfassung. Stufe 3 bringt das Kundenportal.
+
+**Ticket-Mail-Sync:** braucht eine einmalige App-Registrierung in Entra ID — Anleitung in [docs/entra-id-setup.md](docs/entra-id-setup.md). Ohne sie läuft alles außer Mailversand/-empfang (`TICKET_SYNC=off`).
 
 ## Setup
 

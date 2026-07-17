@@ -21,8 +21,8 @@ Rahmenbedingungen:
 | --- | --- | --- |
 | 1 | Kundenakte: Firmen, Kontakte, Verträge mit Fristen, Dokumente | ✅ fertig (16.07.2026) |
 | — | Produktions-Deployment (Docker + Caddy) | ✅ gebaut, Go-Live offen |
-| 2 | Ticketsystem: E-Mail via Microsoft Graph, Zeiterfassung | ⬜ als Nächstes |
-| 3 | Kundenportal: Tickets, Rechnungen aus lexoffice, freigegebene Dokumente | ⬜ danach |
+| 2 | Ticketsystem: E-Mail via Microsoft Graph, SLA, Zeiterfassung | ✅ fertig (16.07.2026), Entra-Setup offen |
+| 3 | Kundenportal: Tickets, Rechnungen aus lexoffice, freigegebene Dokumente | ⬜ als Nächstes |
 | 4+ | Geparkt: Zeiten/Pauschalen → Rechnungsentwürfe in lexoffice; RMM-Alerts → Tickets | ⬜ |
 
 **Bewusst NICHT bauen** (am 15.07.2026 entschieden): Rechnungserzeugung (GoBD/E-Rechnung bleibt in lexoffice, nur Sync), Passwort-Verwaltung (→ Vaultwarden o. ä.), Assets als Modul, Angebote, Wissensdatenbank, Kunden-Selbstverwaltung von Portal-Nutzern.
@@ -61,16 +61,19 @@ Stolpersteine, die schon gelöst sind (nicht erneut hineinlaufen):
 
 **Offen für den Go-Live (braucht Manuel):** DNS-A-Record auf den VPS, Repo klonen, `.env.production` ausfüllen, `docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build`, Admin seeden, 2FA einrichten, Seed-Passwort ändern. Backup-Cron einrichten (Befehl im README).
 
-## Stufe 2 — Ticketsystem (als Nächstes)
+## Stufe 2 — Ticketsystem (fertig, 16.07.2026)
 
-Abgestimmter Scope (15.07.2026):
+Detailplan mit allen abgestimmten Entscheidungen: [superpowers/plans/2026-07-16-stufe-2-ticketsystem.md](superpowers/plans/2026-07-16-stufe-2-ticketsystem.md). Gebaut und verifiziert (99 Tests, UI im Browser durchgespielt):
 
-- **E-Mail rein/raus über Microsoft Graph API** mit der Shared Mailbox `support@corvion.de`: eingehende Mails werden Tickets (bzw. Antworten auf bestehende Tickets), Antworten aus dem Tool gehen als Mail raus.
-- **Tickets:** Status-Workflow, Zuordnung zu Firma + Ansprechpartner (Matching über Absenderadresse), interner Bearbeiter.
-- **Einfache Zeiterfassung pro Ticket:** Minuten + Notiz + Flag „abrechenbar". Bewusst kein Timer, keine Stundensätze.
-- **Voraussetzung von Manuel:** App-Registrierung in Entra ID (Client-Credentials mit `Mail.ReadWrite` + `Mail.Send` auf die Shared Mailbox, idealerweise per Application Access Policy auf diese Mailbox begrenzt).
+- **Mail-Sync** (Poller alle 90 s, Graph-Delta-Query auf Inbox + Gesendete von `support@corvion.de`): Mail ohne `[#T-…]` im Betreff → neues Ticket + Auto-Eingangsbestätigung; mit Nummer bzw. passender `conversationId` → Antwort im Thread. Verarbeitete Mails wandern in den Outlook-Ordner „Im Tool". Kein Alt-Import beim Start.
+- **Tickets:** Nummern ab T-1001, Status Neu→In Arbeit→Wartet auf Kunde→Gelöst→Geschlossen mit Auto-Reopen, Priorität mit **SLA auf Erstreaktion** (Kritisch 2 h / Hoch 4 h / Normal 8 h, Geschäftszeiten Mo–Fr 8–17, NRW-Feiertage — pure Logik in `src/lib/tickets/sla.ts`), unbekannte Absender → Ticket ohne Firma mit Zuordnungs-Kasten (legt optional den Kontakt an), Anhänge am Ticket, interne Notizen, manuelle Tickets mit proaktiver Erst-Mail.
+- **Antworten** aus dem Tool per Graph `sendMail` (Tiptap-Editor: fett/kursiv/Listen/Links/Code/Überschriften; Signatur automatisch). Aus Outlook gesendete Antworten mit Ticketnummer werden in den Verlauf übernommen.
+- **Zeiterfassung** je Ticket (Minuten/Notiz/abrechenbar/Datum) + Monatsreport je Firma unter `/berichte/zeiten` als lexoffice-Abrechnungsgrundlage.
+- Dashboard: Kacheln (Offen/Neu/SLA überfällig) + Liste der dringendsten Tickets.
 
-Vor Implementierungsstart: Brainstorming-/Grill-Runde zum Feinschliff (z. B. Polling vs. Graph-Webhooks, Ticketnummern-Schema, Umgang mit Anhängen) und einen Implementierungsplan nach dem Muster von Stufe 1 schreiben.
+**Go-Live-Voraussetzung (Manuel):** Entra-ID-App-Registrierung nach [entra-id-setup.md](entra-id-setup.md), Werte in `.env.production`, `TICKET_SYNC=on`. Bis dahin läuft alles außer Mailversand/-empfang.
+
+Architektur-Notizen: Graph nur über das mockbare `GraphClient`-Interface; Mail-HTML in beide Richtungen durch `sanitizeMailHtml`; Delta-Links in der Tabelle `sync_state`; Poller startet einmalig in `hooks.server.ts`.
 
 ## Stufe 3 — Kundenportal (danach)
 
@@ -106,9 +109,9 @@ Nicht im Repo, weil rechnergebunden:
 
 TDD ohne Ausnahme (Test rot → implementieren → grün → deutscher Conventional Commit), Svelte-Komponenten vor Abschluss durch `npx @sveltejs/mcp svelte-autofixer`, UI-Änderungen im Browser verifizieren, `npm run check` vor jedem Commit. Details in CLAUDE.md.
 
-## Offene Punkte (Stand 16.07.2026)
+## Offene Punkte (Stand 16.07.2026, abends)
 
 1. Go-Live auf dem Hetzner-VPS (siehe Deployment oben) — braucht Domain/DNS von Manuel
 2. Seed-Admin-Passwort nach erstem Login ändern
-3. Entra-ID-App-Registrierung für Stufe 2 (Voraussetzung, Manuel)
-4. Stufe 2 planen und bauen
+3. Entra-ID-App-Registrierung nach [entra-id-setup.md](entra-id-setup.md), dann `TICKET_SYNC=on` und Funktionstest mit echter Mail
+4. Stufe 3 (Kundenportal) planen — vorher wieder Grill-Runde
