@@ -6,6 +6,8 @@ import { svelteKitHandler } from 'better-auth/svelte-kit';
 import { db } from '$lib/server/db';
 import { createGraphClient } from '$lib/server/graph/client';
 import { startTicketSync } from '$lib/server/tickets/poller';
+import { createLexofficeClient } from '$lib/server/lexoffice/client';
+import { startInvoiceSync } from '$lib/server/lexoffice/sync';
 
 // Mail-Sync einmalig starten — nur zur Laufzeit und nur wenn aktiv geschaltet
 if (!building && env.TICKET_SYNC === 'on') {
@@ -22,6 +24,16 @@ if (!building && env.TICKET_SYNC === 'on') {
 			})
 		);
 		console.log('Ticket-Sync gestartet (Intervall 90 s).');
+	}
+}
+
+// Rechnungs-Sync (stündlich) — nur wenn aktiv geschaltet und Key vorhanden
+if (!building && env.LEXOFFICE_SYNC === 'on') {
+	if (!env.LEXOFFICE_API_KEY) {
+		console.error('Rechnungs-Sync: LEXOFFICE_SYNC=on, aber LEXOFFICE_API_KEY fehlt — Sync bleibt aus.');
+	} else {
+		startInvoiceSync(db, createLexofficeClient(env.LEXOFFICE_API_KEY));
+		console.log('Rechnungs-Sync gestartet (stündlich).');
 	}
 }
 
