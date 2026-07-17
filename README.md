@@ -26,7 +26,7 @@ Beim ersten Login verlangt das Tool die Einrichtung der Zwei-Faktor-Authentifizi
 | `npm run db:generate` / `db:migrate` | Schema-Migrationen |
 | `npm run db:studio` | Drizzle Studio (DB-GUI) |
 
-Arbeitskonventionen stehen in [CLAUDE.md](CLAUDE.md), der Implementierungsplan in [docs/superpowers/plans/](docs/superpowers/plans/).
+Arbeitskonventionen stehen in [CLAUDE.md](CLAUDE.md). **Projektstand, Roadmap und Übergabe-Doku: [docs/PROJEKT.md](docs/PROJEKT.md)** — der Implementierungsplan von Stufe 1 liegt in [docs/superpowers/plans/](docs/superpowers/plans/).
 
 ## Deployment (Hetzner-VPS o. ä.)
 

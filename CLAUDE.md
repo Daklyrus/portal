@@ -1,6 +1,8 @@
 # Corvion Tool
 
-Internes PSA-Tool für Corvion (MSP): Kundenakte mit Firmen, Ansprechpartnern, Verträgen (Kündigungsfristen-Logik) und Dokumenten. Roadmap: Stufe 2 = Ticketsystem (E-Mail via Microsoft Graph), Stufe 3 = Kundenportal (Rechnungen aus lexoffice). Plan: `docs/superpowers/plans/2026-07-15-stufe-1-kundenakte.md`.
+Internes PSA-Tool für Corvion (MSP): Kundenakte mit Firmen, Ansprechpartnern, Verträgen (Kündigungsfristen-Logik) und Dokumenten. Roadmap: Stufe 2 = Ticketsystem (E-Mail via Microsoft Graph), Stufe 3 = Kundenportal (Rechnungen aus lexoffice).
+
+**Projektstand, Roadmap-Details und Übergabe-Kontext: `docs/PROJEKT.md` — zu Sessionbeginn lesen.** Plan Stufe 1: `docs/superpowers/plans/2026-07-15-stufe-1-kundenakte.md`.
 
 ## Stack
 
