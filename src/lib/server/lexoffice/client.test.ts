@@ -77,3 +77,36 @@ describe('getInvoicePdf', () => {
 		expect(String(fetchMock.mock.calls[1][0])).toContain('/files/file-9');
 	});
 });
+
+describe('createInvoiceDraft', () => {
+	it('postet den entwurf und liefert die id zurück', async () => {
+		fetchMock.mockResolvedValueOnce(jsonResponse({ id: 'entwurf-1' }, 201));
+
+		const draft = {
+			voucherDate: '2026-06-30T12:00:00.000+02:00',
+			address: { contactId: 'lex-kontakt-1' },
+			lineItems: [
+				{
+					type: 'custom' as const,
+					name: 'Managed Basic — Juni 2026',
+					quantity: 1,
+					unitName: 'Monat',
+					unitPrice: { currency: 'EUR' as const, netAmount: 499, taxRatePercentage: 19 as const }
+				}
+			],
+			totalPrice: { currency: 'EUR' as const },
+			taxConditions: { taxType: 'net' as const },
+			title: 'Rechnung',
+			introduction: 'Leistungszeitraum 01.06.2026 – 30.06.2026'
+		};
+
+		const result = await client().createInvoiceDraft(draft);
+
+		expect(result.id).toBe('entwurf-1');
+		const [invoiceUrl, opts] = fetchMock.mock.calls[0];
+		expect(String(invoiceUrl)).toBe('https://api.lexoffice.io/v1/invoices');
+		expect(String(invoiceUrl)).not.toContain('finalize');
+		expect(opts.method).toBe('POST');
+		expect(JSON.parse(opts.body).address.contactId).toBe('lex-kontakt-1');
+	});
+});

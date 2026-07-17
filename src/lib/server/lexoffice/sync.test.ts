@@ -17,7 +17,8 @@ let companyId: string;
 function makeLex(invoices: LexofficeInvoice[]): LexofficeClient {
 	return {
 		listInvoices: vi.fn().mockResolvedValue(invoices),
-		getInvoicePdf: vi.fn()
+		getInvoicePdf: vi.fn(),
+		createInvoiceDraft: vi.fn()
 	};
 }
 
