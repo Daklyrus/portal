@@ -16,7 +16,9 @@ export const companySchema = z.object({
 	email: emptyToNull(z.string().trim().email('E-Mail prüfen')),
 	phone: emptyToNull(z.string().trim()),
 	website: emptyToNull(z.string().trim()),
-	notes: emptyToNull(z.string().trim())
+	notes: emptyToNull(z.string().trim()),
+	// Stufe 3: Verknüpfung zum lexoffice-Kontakt für den Rechnungs-Sync
+	lexofficeContactId: emptyToNull(z.string().trim())
 });
 
 export type CompanyInput = z.infer<typeof companySchema>;

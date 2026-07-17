@@ -30,7 +30,8 @@ const base = {
 	renewalTermMonths: 12,
 	noticePeriodMonths: 3,
 	monthlyFeeCents: 49900,
-	includedServices: null
+	includedServices: null,
+	sharedWithCustomer: false
 };
 
 beforeEach(async () => {
@@ -44,7 +45,8 @@ beforeEach(async () => {
 		email: null,
 		phone: null,
 		website: null,
-		notes: null
+		notes: null,
+		lexofficeContactId: null
 	});
 	companyId = company.id;
 });

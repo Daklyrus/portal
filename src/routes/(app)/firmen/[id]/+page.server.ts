@@ -21,17 +21,35 @@ import {
 	getDocument,
 	listDocuments
 } from '$lib/server/documents/documents';
+import { createAuth } from '$lib/server/auth';
+import {
+	activatePortalAccess,
+	deactivatePortalAccess,
+	getPortalAccessByContact,
+	PortalError
+} from '$lib/server/portal/access';
 import { deleteStoredFile, saveUpload, UploadError } from '$lib/server/documents/storage';
 import { contactSchema } from '$lib/validation/contact';
 import { contractSchema } from '$lib/validation/contract';
 import type { Actions, PageServerLoad } from './$types';
 
+// Eigene Instanz mit signUp-Erlaubnis — nur serverseitig für die Zugangs-Anlage.
+// requestCookies MUSS aus sein: signUpEmail loggt den neuen Nutzer ein, und mit
+// Cookie-Plugin würde die Session des angemeldeten Admins im Browser ersetzt.
+const portalAuth = createAuth(db, { allowSignUp: true, requestCookies: false });
+
 export const load: PageServerLoad = async ({ params }) => {
 	const company = await getCompany(db, params.id);
 	if (!company) error(404, 'Firma nicht gefunden');
+	const contacts = await listContacts(db, params.id);
+	const accessMap = await getPortalAccessByContact(
+		db,
+		contacts.map((c) => c.id)
+	);
 	return {
 		company,
-		contacts: await listContacts(db, params.id),
+		contacts,
+		portalContactIds: [...accessMap.keys()],
 		contracts: await listContractsWithDeadlines(db, params.id, new Date()),
 		documents: await listDocuments(db, params.id)
 	};
@@ -82,6 +100,26 @@ export const actions: Actions = {
 	setPrimary: async ({ params, request }) => {
 		const form = await request.formData();
 		await setPrimaryContact(db, params.id, String(form.get('contactId') ?? ''));
+		return { contactSaved: true };
+	},
+
+	activatePortal: async ({ request }) => {
+		const form = await request.formData();
+		const contactId = String(form.get('contactId') ?? '');
+		try {
+			await activatePortalAccess(db, portalAuth, contactId);
+		} catch (err) {
+			if (err instanceof PortalError) {
+				return fail(400, { portalError: err.message, portalContactId: contactId });
+			}
+			throw err;
+		}
+		return { contactSaved: true };
+	},
+
+	deactivatePortal: async ({ request }) => {
+		const form = await request.formData();
+		await deactivatePortalAccess(db, String(form.get('contactId') ?? ''));
 		return { contactSaved: true };
 	},
 

@@ -43,6 +43,15 @@ export const slaTones: Record<SlaStatus, string> = {
 	overdue: 'bg-destructive/10 text-destructive'
 };
 
+/** Kundengerechte Status-Texte fürs Portal */
+export const portalStatusLabels: Record<TicketStatus, string> = {
+	new: 'Eingegangen',
+	in_progress: 'In Bearbeitung',
+	waiting_customer: 'Wartet auf Ihre Rückmeldung',
+	resolved: 'Gelöst — bitte bestätigen',
+	closed: 'Abgeschlossen'
+};
+
 export const statusOptions = (Object.keys(statusLabels) as TicketStatus[]).map((value) => ({
 	value,
 	label: statusLabels[value]

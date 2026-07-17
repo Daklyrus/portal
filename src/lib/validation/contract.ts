@@ -39,7 +39,8 @@ export const contractSchema = z
 		renewalTermMonths: monthsField('Verlängerung in Monaten prüfen'),
 		noticePeriodMonths: monthsField('Kündigungsfrist in Monaten prüfen'),
 		monthlyFee: feeToCents,
-		includedServices: emptyToNull(z.string().trim())
+		includedServices: emptyToNull(z.string().trim()),
+		sharedWithCustomer: z.preprocess((v) => v === 'on' || v === true, z.boolean())
 	})
 	.transform(({ monthlyFee, ...rest }) => ({ ...rest, monthlyFeeCents: monthlyFee }));
 

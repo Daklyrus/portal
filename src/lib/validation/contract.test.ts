@@ -35,3 +35,10 @@ describe('contractSchema', () => {
 		expect(contractSchema.safeParse({ ...valid, status: 'egal' }).success).toBe(false);
 	});
 });
+
+describe('contractSchema portal-freigabe', () => {
+	it('wandelt die checkbox in ein boolean', () => {
+		expect(contractSchema.parse({ ...valid, sharedWithCustomer: 'on' }).sharedWithCustomer).toBe(true);
+		expect(contractSchema.parse(valid).sharedWithCustomer).toBe(false);
+	});
+});

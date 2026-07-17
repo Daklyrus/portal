@@ -17,7 +17,8 @@
 		{ name: 'website', label: 'Website', required: false, colSpan: 1 },
 		{ name: 'street', label: 'Straße und Hausnummer', required: false, colSpan: 2 },
 		{ name: 'zip', label: 'PLZ', required: false, colSpan: 1 },
-		{ name: 'city', label: 'Ort', required: false, colSpan: 1 }
+		{ name: 'city', label: 'Ort', required: false, colSpan: 1 },
+		{ name: 'lexofficeContactId', label: 'lexoffice-Kontakt-ID (für Rechnungs-Sync)', required: false, colSpan: 2 }
 	] as const;
 </script>
 

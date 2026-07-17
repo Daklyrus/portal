@@ -22,7 +22,7 @@ Rahmenbedingungen:
 | 1 | Kundenakte: Firmen, Kontakte, Verträge mit Fristen, Dokumente | ✅ fertig (16.07.2026) |
 | — | Produktions-Deployment (Docker + Caddy) | ✅ gebaut, Go-Live offen |
 | 2 | Ticketsystem: E-Mail via Microsoft Graph, SLA, Zeiterfassung | ✅ fertig (16.07.2026), Entra-Setup offen |
-| 3 | Kundenportal: Tickets, Rechnungen aus lexoffice, freigegebene Dokumente | ⬜ als Nächstes |
+| 3 | Kundenportal: Tickets, Rechnungen aus lexoffice, freigegebene Dokumente | ✅ fertig (16.07.2026), lexoffice-Key offen |
 | 4+ | Geparkt: Zeiten/Pauschalen → Rechnungsentwürfe in lexoffice; RMM-Alerts → Tickets | ⬜ |
 
 **Bewusst NICHT bauen** (am 15.07.2026 entschieden): Rechnungserzeugung (GoBD/E-Rechnung bleibt in lexoffice, nur Sync), Passwort-Verwaltung (→ Vaultwarden o. ä.), Assets als Modul, Angebote, Wissensdatenbank, Kunden-Selbstverwaltung von Portal-Nutzern.
@@ -75,12 +75,19 @@ Detailplan mit allen abgestimmten Entscheidungen: [superpowers/plans/2026-07-16-
 
 Architektur-Notizen: Graph nur über das mockbare `GraphClient`-Interface; Mail-HTML in beide Richtungen durch `sanitizeMailHtml`; Delta-Links in der Tabelle `sync_state`; Poller startet einmalig in `hooks.server.ts`.
 
-## Stufe 3 — Kundenportal (danach)
+## Stufe 3 — Kundenportal (fertig, 16.07.2026)
 
-- Kunden-Login (Portal-Nutzer legt Corvion an, keine Selbstregistrierung), Rolle „Kunde".
-- Tickets erstellen und verfolgen.
-- **Rechnungen aus lexoffice:** API-Sync (PDF + Zahlstatus), Anzeige im Portal. Vorhalt existiert: `companies.lexofficeContactId`.
-- Explizit freigegebene Verträge/Dokumente. Vorhalt existiert: `documents.sharedWithCustomer`.
+Detailplan mit allen abgestimmten Entscheidungen: [superpowers/plans/2026-07-16-stufe-3-kundenportal.md](superpowers/plans/2026-07-16-stufe-3-kundenportal.md). Gebaut und verifiziert (123 Tests, kompletter Einladungs- und Kunden-Flow im Browser durchgespielt):
+
+- **Zugänge:** je Ansprechpartner in der Kundenakte („Portal-Zugang einladen" → Mail mit 48-h-Passwort-Link über die Shared Mailbox, better-auth-Reset-Mechanik). Rolle `customer`, Bindung an die Firma über `portal_access`. 2FA für Kunden optional. „Passwort vergessen" auf der Login-Seite für alle.
+- **Portal** unter `/portal` (eigenes schlankes Layout, gleiche App): alle Tickets der eigenen Firma (ohne Notizen/SLA/Bearbeiter), Anfragen erstellen/beantworten (mit Anhängen), Lösungs-Bestätigung (Gelöst → Geschlossen bzw. Widerspruch → In Arbeit); Rechnungen (Status-Badges, PDF on-demand von lexoffice); freigegebene Verträge (inkl. nächster Verlängerung) und Dokumente.
+- **lexoffice:** stündlicher Sync (`LEXOFFICE_SYNC=on` + Key) über mockbaren Client in die Tabelle `invoices`; Zuordnung über `companies.lexofficeContactId` (Feld in der Firmen-Akte).
+
+**Zwei Sicherheitsfunde aus der Browser-Verifikation — beide gefixt und als Konvention in CLAUDE.md verankert:**
+1. Server-seitiges `signUpEmail` mit Cookie-Plugin ersetzte die Admin-Session durch die des neu angelegten Kunden → Auth-Instanzen für Nutzeranlage brauchen `requestCookies: false`.
+2. **Layout-Guards greifen nicht bei Form Actions** — anonyme POSTs führten Actions aus. Fix: zentraler Guard in `hooks.server.ts` (Auth + Rollentrennung + 2FA-Pflicht vor dem Routing).
+
+**Offen (Manuel):** lexoffice-API-Key besorgen (app.lexoffice.de → Extras → Public API), `LEXOFFICE_API_KEY` + `LEXOFFICE_SYNC=on` setzen, lexoffice-Kontakt-IDs an den Firmen pflegen.
 
 ## Weiterarbeiten auf einem anderen Rechner
 
@@ -109,9 +116,10 @@ Nicht im Repo, weil rechnergebunden:
 
 TDD ohne Ausnahme (Test rot → implementieren → grün → deutscher Conventional Commit), Svelte-Komponenten vor Abschluss durch `npx @sveltejs/mcp svelte-autofixer`, UI-Änderungen im Browser verifizieren, `npm run check` vor jedem Commit. Details in CLAUDE.md.
 
-## Offene Punkte (Stand 16.07.2026, abends)
+## Offene Punkte (Stand 16.07.2026, nachts)
 
 1. Go-Live auf dem Hetzner-VPS (siehe Deployment oben) — braucht Domain/DNS von Manuel
-2. Seed-Admin-Passwort nach erstem Login ändern
+2. Seed-Admin-Passwort ändern (Passwort-Ändern-UI fehlt noch — vorgemerkter Task)
 3. Entra-ID-App-Registrierung nach [entra-id-setup.md](entra-id-setup.md), dann `TICKET_SYNC=on` und Funktionstest mit echter Mail
-4. Stufe 3 (Kundenportal) planen — vorher wieder Grill-Runde
+4. lexoffice-API-Key + `LEXOFFICE_SYNC=on` + Kontakt-IDs an Firmen pflegen
+5. Stufe 4+ (geparkt): Zeiten/Pauschalen → Rechnungsentwürfe, RMM-Alerts → Tickets

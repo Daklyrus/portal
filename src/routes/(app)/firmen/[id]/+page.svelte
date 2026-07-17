@@ -37,6 +37,7 @@
 		noticePeriodMonths: number;
 		monthlyFeeCents: number;
 		includedServices: string | null;
+		sharedWithCustomer: boolean;
 	}): Record<string, string | null> {
 		return {
 			title: contract.title,
@@ -47,7 +48,8 @@
 			renewalTermMonths: String(contract.renewalTermMonths),
 			noticePeriodMonths: String(contract.noticePeriodMonths),
 			monthlyFee: (contract.monthlyFeeCents / 100).toFixed(2).replace('.', ','),
-			includedServices: contract.includedServices
+			includedServices: contract.includedServices,
+			sharedWithCustomer: contract.sharedWithCustomer ? 'on' : ''
 		};
 	}
 
@@ -245,12 +247,43 @@
 								<div><dt class="sr-only">Notizen</dt><dd class="text-secondary">{contact.notes}</dd></div>
 							{/if}
 						</dl>
+						{#if data.portalContactIds.includes(contact.id)}
+							<p class="mt-2">
+								<span class="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800">
+									Portal-Zugang aktiv
+								</span>
+							</p>
+						{/if}
+						{#if form && 'portalError' in form && form.portalContactId === contact.id}
+							<p class="mt-2 text-sm text-destructive" role="alert">{form.portalError}</p>
+						{/if}
 						<div class="mt-3 flex flex-wrap gap-2 text-sm">
 							{#if !contact.isPrimary}
 								<form method="post" action="?/setPrimary" use:enhance>
 									<input type="hidden" name="contactId" value={contact.id} />
 									<button type="submit" class="cursor-pointer font-semibold text-accent hover:underline">
 										Als Hauptkontakt setzen
+									</button>
+								</form>
+							{/if}
+							{#if data.portalContactIds.includes(contact.id)}
+								<form
+									method="post"
+									action="?/deactivatePortal"
+									use:enhance={({ cancel }) => {
+										if (!confirm(`Portal-Zugang von ${contact.firstName} ${contact.lastName} entfernen?`)) cancel();
+									}}
+								>
+									<input type="hidden" name="contactId" value={contact.id} />
+									<button type="submit" class="cursor-pointer font-semibold text-secondary hover:underline">
+										Portal-Zugang entfernen
+									</button>
+								</form>
+							{:else}
+								<form method="post" action="?/activatePortal" use:enhance>
+									<input type="hidden" name="contactId" value={contact.id} />
+									<button type="submit" class="cursor-pointer font-semibold text-accent hover:underline">
+										Portal-Zugang einladen
 									</button>
 								</form>
 							{/if}
