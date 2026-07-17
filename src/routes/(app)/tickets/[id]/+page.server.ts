@@ -13,6 +13,7 @@ import {
 	setTicketStatus
 } from '$lib/server/tickets/tickets';
 import { sendTicketReply } from '$lib/server/tickets/outbound';
+import { addTimeEntry, deleteTimeEntry, listTimeEntries } from '$lib/server/time-entries';
 import {
 	assignCompanySchema,
 	assignUserSchema,
@@ -21,6 +22,7 @@ import {
 	replySchema,
 	statusSchema
 } from '$lib/validation/ticket';
+import { timeEntrySchema } from '$lib/validation/timeEntry';
 import type { Actions, PageServerLoad } from './$types';
 
 function graphClient(): GraphClient | null {
@@ -41,7 +43,8 @@ export const load: PageServerLoad = async ({ params }) => {
 	return {
 		...detail,
 		users: await listInternalUsers(db),
-		companies: await searchCompanies(db, '')
+		companies: await searchCompanies(db, ''),
+		timeEntries: await listTimeEntries(db, params.id)
 	};
 };
 
@@ -105,6 +108,22 @@ export const actions: Actions = {
 		const parsed = assignUserSchema.safeParse(Object.fromEntries(await request.formData()));
 		if (!parsed.success) return fail(400, { message: 'Bearbeiter prüfen' });
 		await assignTicketUser(db, params.id, parsed.data.assignedToId);
+		return { ticketSaved: true };
+	},
+
+	addTime: async ({ params, request, locals }) => {
+		const raw = Object.fromEntries(await request.formData());
+		const parsed = timeEntrySchema.safeParse(raw);
+		if (!parsed.success) {
+			return fail(400, { timeErrors: parsed.error.flatten().fieldErrors, timeValues: raw });
+		}
+		await addTimeEntry(db, params.id, locals.user?.id ?? '', parsed.data);
+		return { ticketSaved: true };
+	},
+
+	deleteTime: async ({ request }) => {
+		const form = await request.formData();
+		await deleteTimeEntry(db, String(form.get('entryId') ?? ''));
 		return { ticketSaved: true };
 	},
 

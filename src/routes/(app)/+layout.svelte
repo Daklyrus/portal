@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
-	import { LayoutDashboard, Building2, Ticket, ShieldCheck, LogOut } from 'lucide-svelte';
+	import { LayoutDashboard, Building2, Ticket, BarChart3, ShieldCheck, LogOut } from 'lucide-svelte';
 	import type { LayoutData } from './$types';
 
 	let { data, children }: { data: LayoutData; children: import('svelte').Snippet } = $props();
@@ -9,7 +9,8 @@
 	const nav = [
 		{ href: resolve('/'), label: 'Dashboard', icon: LayoutDashboard, exact: true },
 		{ href: resolve('/tickets'), label: 'Tickets', icon: Ticket, exact: false },
-		{ href: resolve('/firmen'), label: 'Firmen', icon: Building2, exact: false }
+		{ href: resolve('/firmen'), label: 'Firmen', icon: Building2, exact: false },
+		{ href: resolve('/berichte/zeiten'), label: 'Berichte', icon: BarChart3, exact: false }
 	];
 
 	function isActive(href: string, exact: boolean): boolean {

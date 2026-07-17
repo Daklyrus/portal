@@ -37,6 +37,14 @@
 	let replyErrors = $derived(form && 'replyErrors' in form ? form.replyErrors : {});
 	let noteErrors = $derived(form && 'noteErrors' in form ? form.noteErrors : {});
 	let assignErrors = $derived(form && 'assignErrors' in form ? form.assignErrors : {});
+	let timeErrors = $derived(form && 'timeErrors' in form ? form.timeErrors : {});
+
+	const today = new Date().toISOString().slice(0, 10);
+	let totalMinutes = $derived(data.timeEntries.reduce((sum, e) => sum + e.minutes, 0));
+
+	function formatMinutes(minutes: number): string {
+		return `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, '0')} h`;
+	}
 </script>
 
 <svelte:head><title>T-{ticket.number} {ticket.subject} – Corvion Tool</title></svelte:head>
@@ -263,6 +271,105 @@
 		</form>
 	</section>
 {/key}
+
+<section class="mt-6 rounded-lg border border-border bg-white p-4">
+	<div class="flex flex-wrap items-center justify-between gap-2">
+		<h2 class="font-display text-lg font-semibold">Zeiten</h2>
+		{#if data.timeEntries.length > 0}
+			<p class="text-sm text-secondary">Gesamt: <span class="font-semibold">{formatMinutes(totalMinutes)}</span></p>
+		{/if}
+	</div>
+
+	{#if data.timeEntries.length > 0}
+		<div class="mt-3 overflow-x-auto">
+			<table class="w-full text-left text-sm">
+				<thead class="border-b border-border text-xs uppercase tracking-wide text-secondary">
+					<tr>
+						<th scope="col" class="py-2 pr-4">Datum</th>
+						<th scope="col" class="py-2 pr-4">Wer</th>
+						<th scope="col" class="py-2 pr-4">Notiz</th>
+						<th scope="col" class="py-2 pr-4">Minuten</th>
+						<th scope="col" class="py-2 pr-4">Abrechenbar</th>
+						<th scope="col" class="py-2"><span class="sr-only">Aktionen</span></th>
+					</tr>
+				</thead>
+				<tbody>
+					{#each data.timeEntries as entry (entry.id)}
+						<tr class="border-b border-border last:border-b-0">
+							<td class="py-2 pr-4">{new Date(entry.workDate).toLocaleDateString('de-DE')}</td>
+							<td class="py-2 pr-4">{entry.user?.name ?? '–'}</td>
+							<td class="py-2 pr-4">{entry.note ?? '–'}</td>
+							<td class="py-2 pr-4">{entry.minutes}</td>
+							<td class="py-2 pr-4">{entry.billable ? 'ja' : 'nein'}</td>
+							<td class="py-2">
+								<form
+									method="post"
+									action="?/deleteTime"
+									use:enhance={({ cancel }) => {
+										if (!confirm('Zeiteintrag löschen?')) cancel();
+									}}
+								>
+									<input type="hidden" name="entryId" value={entry.id} />
+									<button type="submit" class="cursor-pointer text-xs font-semibold text-destructive hover:underline">
+										Löschen
+									</button>
+								</form>
+							</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		</div>
+	{/if}
+
+	<form method="post" action="?/addTime" use:enhance class="mt-4 flex flex-wrap items-end gap-3 rounded-lg border border-border bg-muted/40 p-3">
+		<div>
+			<label for="minutes" class="block text-sm font-semibold">Minuten</label>
+			<input
+				id="minutes"
+				name="minutes"
+				type="number"
+				min="1"
+				required
+				class="mt-1 w-24 rounded-md border-border text-sm focus:border-accent focus:ring-accent"
+			/>
+		</div>
+		<div class="min-w-48 flex-1">
+			<label for="timeNote" class="block text-sm font-semibold">Notiz</label>
+			<input
+				id="timeNote"
+				name="note"
+				type="text"
+				placeholder="z. B. Fernwartung, Vor-Ort-Termin"
+				class="mt-1 w-full rounded-md border-border text-sm focus:border-accent focus:ring-accent"
+			/>
+		</div>
+		<div>
+			<label for="workDate" class="block text-sm font-semibold">Datum</label>
+			<input
+				id="workDate"
+				name="workDate"
+				type="date"
+				value={today}
+				required
+				class="mt-1 rounded-md border-border text-sm focus:border-accent focus:ring-accent"
+			/>
+		</div>
+		<label class="flex items-center gap-2 pb-2 text-sm">
+			<input type="checkbox" name="billable" checked class="rounded border-border text-accent focus:ring-accent" />
+			abrechenbar
+		</label>
+		<button
+			type="submit"
+			class="cursor-pointer rounded-md bg-primary px-3 py-2 text-sm font-semibold text-on-primary transition-colors duration-150 hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+		>
+			Zeit erfassen
+		</button>
+		{#if timeErrors && Object.keys(timeErrors).length > 0}
+			<p class="w-full text-sm text-destructive" role="alert">{Object.values(timeErrors).flat()[0]}</p>
+		{/if}
+	</form>
+</section>
 
 <style>
 	.rich-content :global(p) {
