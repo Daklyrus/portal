@@ -22,7 +22,12 @@
 
 <div class="mt-6">
 	<CompanyForm
-		values={(form?.values as Record<string, string>) ?? data.company}
+		values={(form?.values as Record<string, string>) ?? {
+			...data.company,
+			hourlyRate: data.company.hourlyRateCents
+				? (data.company.hourlyRateCents / 100).toFixed(2).replace('.', ',')
+				: ''
+		}}
 		errors={form?.errors ?? {}}
 		submitLabel="Änderungen speichern"
 	/>

@@ -37,7 +37,8 @@ beforeEach(async () => {
 		phone: null,
 		website: null,
 		notes: null,
-		lexofficeContactId: null
+		lexofficeContactId: null,
+		hourlyRateCents: null
 	});
 	companyId = company.id;
 	const ticket = await createTicket(db, { subject: 'Zeittest', companyId });
@@ -96,7 +97,8 @@ describe('time-entries', () => {
 			phone: null,
 			website: null,
 			notes: null,
-			lexofficeContactId: null
+			lexofficeContactId: null,
+		hourlyRateCents: null
 		});
 		const otherTicket = await createTicket(db, { subject: 'Fremd', companyId: other.id });
 		await addTimeEntry(db, otherTicket.id, 'tech-1', {

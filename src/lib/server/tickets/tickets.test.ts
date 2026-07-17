@@ -68,7 +68,8 @@ describe('listTickets', () => {
 			phone: null,
 			website: null,
 			notes: null,
-			lexofficeContactId: null
+			lexofficeContactId: null,
+		hourlyRateCents: null
 		});
 		await db
 			.insert(schema.user)
@@ -128,7 +129,8 @@ describe('assignTicketCompany', () => {
 			phone: null,
 			website: null,
 			notes: null,
-			lexofficeContactId: null
+			lexofficeContactId: null,
+		hourlyRateCents: null
 		});
 		const ticket = await createTicket(db, {
 			subject: 'Unbekannt',
