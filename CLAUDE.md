@@ -1,6 +1,6 @@
 # Corvion Tool
 
-PSA-Tool für Corvion (MSP): Kundenakte (Firmen, Ansprechpartner, Verträge mit Kündigungsfristen, Dokumente) + Ticketsystem (E-Mail via Microsoft Graph, SLA auf Erstreaktion, Zeiterfassung) + Kundenportal unter `/portal` (Rolle `customer`, Rechnungen aus lexoffice, freigegebene Verträge/Dokumente).
+PSA-Tool für Corvion (MSP): Kundenakte (Firmen, Ansprechpartner, Verträge mit Kündigungsfristen, Dokumente) + Ticketsystem (E-Mail via Microsoft Graph, SLA auf Erstreaktion, Zeiterfassung) + Kundenportal unter `/portal` (Rolle `customer`, Rechnungen aus lexoffice, freigegebene Verträge/Dokumente) + Abrechnungsläufe (lexoffice-Rechnungsentwürfe aus Pauschalen und Zeiten).
 
 **Projektstand, Roadmap-Details und Übergabe-Kontext: `docs/PROJEKT.md` — zu Sessionbeginn lesen.** Plan Stufe 1: `docs/superpowers/plans/2026-07-15-stufe-1-kundenakte.md`.
 
@@ -24,7 +24,8 @@ SvelteKit 2 + Svelte 5 (Runes), TypeScript, Tailwind CSS 4, Drizzle ORM + postgr
 - **Svelte 5 Runes only:** `$state`/`$derived`/`$props`, `onclick`, Snippets, keyed `{#each}`, Links über `resolve()` aus `$app/paths` (Route-IDs enthalten die Gruppe: `/(app)/firmen/[id]`). Vor Abschluss: `npx @sveltejs/mcp svelte-autofixer <datei>`.
 - **Form Actions statt API-Routen** für alle Formulare; Validierung mit zod in `src/lib/validation/` (deutsche Fehlermeldungen), Serverlogik als testbare Funktionen in `src/lib/server/` (nehmen `db` als Parameter).
 - **Design-Tokens** aus `design-system/corvion-tool/MASTER.md` sind in `src/routes/layout.css` als Tailwind-`@theme` hinterlegt — keine rohen Hex-Werte in Components, keine Emojis als Icons (Lucide), Fonts über @fontsource (kein Google-CDN).
-- **Geld in Cent (integer), Datum als ISO-String** (`date`-Spalten mit `mode: 'string'`).
+- **Geld in Cent (integer), Datum als ISO-String** (`date`-Spalten mit `mode: 'string'`). Cent → Euro-Float NUR an der lexoffice-Grenze (`src/lib/server/billing/draft.ts`).
+- Abrechnung sperrt Zeiteinträge über `timeEntries.billingRunId` (`ON DELETE SET NULL` — Lauf löschen gibt frei). Entwürfe werden NIE festgeschrieben; das bleibt in lexoffice.
 - **Deutsche UI-Texte, direkt und floskelfrei** (stop-slop): „Vertrag speichern", nicht „Hier können Sie…".
 - Auth: Registrierung ist deaktiviert, interne Nutzer werden geseedet; 2FA ist Pflicht (Guard in `src/routes/(app)/+layout.server.ts`).
 - Uploads liegen unter `data/uploads/<companyId|tickets/<ticketId>>/<uuid>.<ext>` — Pfade nie aus Nutzereingaben bauen (`src/lib/server/documents/storage.ts`).

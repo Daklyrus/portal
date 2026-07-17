@@ -25,7 +25,8 @@ beforeEach(async () => {
 		phone: null,
 		website: null,
 		notes: null,
-		lexofficeContactId: null
+		lexofficeContactId: null,
+		hourlyRateCents: null
 	});
 	companyId = company.id;
 });

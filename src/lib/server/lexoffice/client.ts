@@ -17,6 +17,8 @@ export interface LexofficeClient {
 	/** Festgeschriebene Rechnungen ab Datum (alle Seiten) */
 	listInvoices(sinceIso: string): Promise<LexofficeInvoice[]>;
 	getInvoicePdf(lexofficeId: string): Promise<{ data: ArrayBuffer; fileName: string }>;
+	/** Rechnungs-ENTWURF anlegen (kein finalize — Festschreiben bleibt in lexoffice) */
+	createInvoiceDraft(draft: import('../billing/draft').LexofficeInvoiceDraft): Promise<{ id: string }>;
 }
 
 const BASE = 'https://api.lexoffice.io/v1';
@@ -51,9 +53,15 @@ function normalizeStatus(raw: string): InvoiceStatus {
 const isoDay = (value: string | null | undefined) => (value ? value.slice(0, 10) : null);
 
 export function createLexofficeClient(apiKey: string, fetchFn: typeof fetch = fetch): LexofficeClient {
-	async function request(path: string): Promise<Response> {
+	async function request(path: string, init: RequestInit = {}): Promise<Response> {
 		const response = await fetchFn(`${BASE}${path}`, {
-			headers: { Authorization: `Bearer ${apiKey}`, Accept: 'application/json' }
+			...init,
+			headers: {
+				Authorization: `Bearer ${apiKey}`,
+				Accept: 'application/json',
+				...(init.body ? { 'Content-Type': 'application/json' } : {}),
+				...(init.headers ?? {})
+			}
 		});
 		if (!response.ok) {
 			throw new LexofficeError(response.status, `lexoffice-Aufruf fehlgeschlagen: ${path}`);
@@ -85,6 +93,15 @@ export function createLexofficeClient(apiKey: string, fetchFn: typeof fetch = fe
 				);
 				if (data.last) return invoices;
 			}
+		},
+
+		async createInvoiceDraft(draft) {
+			const response = await request('/invoices', {
+				method: 'POST',
+				body: JSON.stringify(draft)
+			});
+			const data = (await response.json()) as { id: string };
+			return { id: data.id };
 		},
 
 		async getInvoicePdf(lexofficeId) {

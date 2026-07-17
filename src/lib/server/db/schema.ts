@@ -7,7 +7,8 @@ import {
 	boolean,
 	integer,
 	date,
-	timestamp
+	timestamp,
+	unique
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { user } from './auth.schema';
@@ -30,6 +31,8 @@ export const companies = pgTable('companies', {
 	notes: text('notes'),
 	// Stufe 3: Verknüpfung für den Rechnungs-Sync
 	lexofficeContactId: text('lexoffice_contact_id'),
+	// Stufe 4: Stundensatz netto in Cent; null = globaler Standard
+	hourlyRateCents: integer('hourly_rate_cents'),
 	...timestamps
 });
 
@@ -158,7 +161,33 @@ export const timeEntries = pgTable('time_entries', {
 	note: text('note'),
 	billable: boolean('billable').default(true).notNull(),
 	workDate: date('work_date', { mode: 'string' }).notNull(),
+	// Stufe 4: gesetzt = im Abrechnungslauf enthalten; Lauf löschen gibt frei (SET NULL)
+	billingRunId: uuid('billing_run_id').references(() => billingRuns.id, { onDelete: 'set null' }),
 	createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
+});
+
+// Stufe 4: ein Abrechnungslauf = ein lexoffice-Rechnungsentwurf je Firma und Monat
+export const billingRuns = pgTable(
+	'billing_runs',
+	{
+		id: uuid('id').primaryKey().defaultRandom(),
+		companyId: uuid('company_id')
+			.notNull()
+			.references(() => companies.id, { onDelete: 'cascade' }),
+		month: text('month').notNull(), // 'yyyy-MM'
+		lexofficeInvoiceId: text('lexoffice_invoice_id').notNull(),
+		totalNetCents: integer('total_net_cents').notNull(),
+		createdById: text('created_by_id').references(() => user.id, { onDelete: 'set null' }),
+		createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
+	},
+	(t) => [unique().on(t.companyId, t.month)]
+);
+
+// Globale Schlüssel-Wert-Einstellungen (z. B. Standard-Stundensatz)
+export const appSettings = pgTable('app_settings', {
+	key: text('key').primaryKey(),
+	value: text('value').notNull(),
+	updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull()
 });
 
 // Kundenportal: Login-Bindung Nutzer ↔ Ansprechpartner ↔ Firma
@@ -220,6 +249,8 @@ export type TimeEntry = typeof timeEntries.$inferSelect;
 export type NewTimeEntry = typeof timeEntries.$inferInsert;
 export type TicketStatus = Ticket['status'];
 export type TicketPriority = Ticket['priority'];
+export type BillingRun = typeof billingRuns.$inferSelect;
+export type AppSetting = typeof appSettings.$inferSelect;
 export type PortalAccess = typeof portalAccess.$inferSelect;
 export type Invoice = typeof invoices.$inferSelect;
 export type NewInvoice = typeof invoices.$inferInsert;

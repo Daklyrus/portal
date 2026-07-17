@@ -94,7 +94,8 @@ describe('processInboxMessage — neue tickets', () => {
 			phone: null,
 			website: null,
 			notes: null,
-			lexofficeContactId: null
+			lexofficeContactId: null,
+		hourlyRateCents: null
 		});
 		const contact = await createContact(db, company.id, {
 			firstName: 'Max',
