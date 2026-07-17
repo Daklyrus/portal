@@ -1,6 +1,6 @@
 # Corvion Tool
 
-Internes PSA-Tool für Corvion (MSP): Kundenakte (Firmen, Ansprechpartner, Verträge mit Kündigungsfristen, Dokumente) + Ticketsystem (E-Mail via Microsoft Graph, SLA auf Erstreaktion, Zeiterfassung). Roadmap: Stufe 3 = Kundenportal (Rechnungen aus lexoffice).
+PSA-Tool für Corvion (MSP): Kundenakte (Firmen, Ansprechpartner, Verträge mit Kündigungsfristen, Dokumente) + Ticketsystem (E-Mail via Microsoft Graph, SLA auf Erstreaktion, Zeiterfassung) + Kundenportal unter `/portal` (Rolle `customer`, Rechnungen aus lexoffice, freigegebene Verträge/Dokumente).
 
 **Projektstand, Roadmap-Details und Übergabe-Kontext: `docs/PROJEKT.md` — zu Sessionbeginn lesen.** Plan Stufe 1: `docs/superpowers/plans/2026-07-15-stufe-1-kundenakte.md`.
 
@@ -28,8 +28,10 @@ SvelteKit 2 + Svelte 5 (Runes), TypeScript, Tailwind CSS 4, Drizzle ORM + postgr
 - **Deutsche UI-Texte, direkt und floskelfrei** (stop-slop): „Vertrag speichern", nicht „Hier können Sie…".
 - Auth: Registrierung ist deaktiviert, interne Nutzer werden geseedet; 2FA ist Pflicht (Guard in `src/routes/(app)/+layout.server.ts`).
 - Uploads liegen unter `data/uploads/<companyId|tickets/<ticketId>>/<uuid>.<ext>` — Pfade nie aus Nutzereingaben bauen (`src/lib/server/documents/storage.ts`).
-- **Graph-Aufrufe nur über das `GraphClient`-Interface** (`src/lib/server/graph/client.ts`) — in Tests immer gemockt, nie echte API. Mail-HTML in beide Richtungen durch `sanitizeMailHtml`.
-- Ticket-Poller startet in `hooks.server.ts` hinter `TICKET_SYNC=on` (Entra-Setup: `docs/entra-id-setup.md`).
+- **Graph-Aufrufe nur über das `GraphClient`-Interface** (`src/lib/server/graph/client.ts`), lexoffice nur über `LexofficeClient` — in Tests immer gemockt, nie echte APIs. Mail-HTML in beide Richtungen durch `sanitizeMailHtml`.
+- Poller starten in `hooks.server.ts` hinter `TICKET_SYNC=on` (Entra-Setup: `docs/entra-id-setup.md`) bzw. `LEXOFFICE_SYNC=on`.
+- **Zugriffsschutz liegt zentral in `hooks.server.ts`** (Auth, Rollentrennung intern/Portal, 2FA-Pflicht) — Layout-Guards greifen NICHT bei Form Actions und sind nur zweite Verteidigungslinie. Neue öffentliche Routen müssen dort in `PUBLIC_PATHS`.
+- **Portal-Queries binden IMMER an die companyId** aus `getPortalContext` (`src/lib/server/portal/`); Kunden sehen nie Notizen (`kind='note'`), SLA-/Bearbeiter-Daten oder fremde Firmen. Serverseitige Auth-Instanzen für Nutzeranlage brauchen `requestCookies: false`, sonst ersetzt `signUpEmail` die Session des Admins.
 
 ## Für später vorgemerkt
 

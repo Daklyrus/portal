@@ -1,8 +1,13 @@
 # Corvion Tool
 
-Internes PSA-Tool für Corvion: Kundenakte mit Firmen, Ansprechpartnern, Verträgen (inkl. Kündigungsfristen-Überwachung), Dokumentenablage sowie Ticketsystem mit E-Mail-Anbindung (Microsoft Graph, Shared Mailbox), SLA-Überwachung und Zeiterfassung. Stufe 3 bringt das Kundenportal.
+PSA-Tool für Corvion: Kundenakte mit Firmen, Ansprechpartnern, Verträgen (inkl. Kündigungsfristen-Überwachung), Dokumentenablage, Ticketsystem mit E-Mail-Anbindung (Microsoft Graph, Shared Mailbox), SLA-Überwachung und Zeiterfassung — plus **Kundenportal** unter `/portal` (Anfragen stellen und verfolgen, Rechnungen aus lexoffice, freigegebene Verträge und Dokumente).
 
-**Ticket-Mail-Sync:** braucht eine einmalige App-Registrierung in Entra ID — Anleitung in [docs/entra-id-setup.md](docs/entra-id-setup.md). Ohne sie läuft alles außer Mailversand/-empfang (`TICKET_SYNC=off`).
+**Externe Anbindungen** (beide optional zuschaltbar):
+
+- **Ticket-Mail-Sync:** einmalige App-Registrierung in Entra ID — Anleitung in [docs/entra-id-setup.md](docs/entra-id-setup.md). Ohne sie läuft alles außer Mailversand/-empfang (`TICKET_SYNC=off`).
+- **Rechnungs-Sync:** lexoffice-API-Key (app.lexoffice.de → Extras → Public API) in `LEXOFFICE_API_KEY`, dann `LEXOFFICE_SYNC=on`. Zuordnung je Firma über das Feld „lexoffice-Kontakt-ID" in der Kundenakte.
+
+**Portal-Zugänge:** In der Kundenakte am Ansprechpartner „Portal-Zugang einladen" — der Kontakt erhält per Mail einen 48 h gültigen Link zum Passwort-Setzen und meldet sich danach unter derselben Login-Seite an.
 
 ## Setup
 
