@@ -2,7 +2,7 @@
 
 Dieses Dokument ist die Übergabe-Quelle für die Weiterarbeit — egal ob auf einem anderen Rechner, mit einer frischen Claude-Session oder nach längerer Pause. Es hält fest, was gebaut ist, was als Nächstes kommt und welche Entscheidungen dahinterstehen. **Bei Weiterarbeit mit Claude: dieses Dokument zu Beginn der Session nennen.**
 
-Stand: 16.07.2026
+Stand: 17.07.2026
 
 ## Worum es geht
 
