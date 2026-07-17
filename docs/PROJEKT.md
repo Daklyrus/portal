@@ -23,7 +23,8 @@ Rahmenbedingungen:
 | — | Produktions-Deployment (Docker + Caddy) | ✅ gebaut, Go-Live offen |
 | 2 | Ticketsystem: E-Mail via Microsoft Graph, SLA, Zeiterfassung | ✅ fertig (16.07.2026), Entra-Setup offen |
 | 3 | Kundenportal: Tickets, Rechnungen aus lexoffice, freigegebene Dokumente | ✅ fertig (16.07.2026), lexoffice-Key offen |
-| 4+ | Geparkt: Zeiten/Pauschalen → Rechnungsentwürfe in lexoffice; RMM-Alerts → Tickets | ⬜ |
+| 4 | Abrechnungsläufe: Rechnungsentwürfe in lexoffice aus Pauschalen + Zeiten | ✅ fertig (17.07.2026) |
+| 5+ | Geparkt: RMM-/Monitoring-Alerts → Tickets | ⬜ |
 
 **Bewusst NICHT bauen** (am 15.07.2026 entschieden): Rechnungserzeugung (GoBD/E-Rechnung bleibt in lexoffice, nur Sync), Passwort-Verwaltung (→ Vaultwarden o. ä.), Assets als Modul, Angebote, Wissensdatenbank, Kunden-Selbstverwaltung von Portal-Nutzern.
 
@@ -116,10 +117,21 @@ Nicht im Repo, weil rechnergebunden:
 
 TDD ohne Ausnahme (Test rot → implementieren → grün → deutscher Conventional Commit), Svelte-Komponenten vor Abschluss durch `npx @sveltejs/mcp svelte-autofixer`, UI-Änderungen im Browser verifizieren, `npm run check` vor jedem Commit. Details in CLAUDE.md.
 
-## Offene Punkte (Stand 16.07.2026, nachts)
+## Stufe 4 — Abrechnungsläufe (fertig, 17.07.2026)
+
+Detailplan mit allen abgestimmten Entscheidungen: [superpowers/plans/2026-07-17-stufe-4-abrechnung.md](superpowers/plans/2026-07-17-stufe-4-abrechnung.md). Gebaut und verifiziert (143 Tests, UI-Roundtrip im Browser):
+
+- **Seite „Abrechnung":** Monat wählen (Default Vormonat) → Vorschau je Firma: Pauschal-Verträge (aktiv, Pauschale > 0, mit Hinweis bei Vertragsbeginn im Monat) + abrechenbare offene Zeiten exakt summiert (247 min = 4,12 h) × Stundensatz. Firmen ohne `lexofficeContactId` rot und ohne Erzeugen-Knopf; ohne `LEXOFFICE_API_KEY` Hinweis-Banner.
+- **Stundensatz netto:** Standard in `app_settings` (auf der Seite pflegbar, Fallback 95 €), je Firma überschreibbar (Feld in der Akte, `companies.hourlyRateCents`).
+- **Entwurf:** `POST /v1/invoices` (ohne finalize) — Pauschal-Positionen einzeln, eine Aufwandsposition mit Einzelnachweis in der Beschreibung, netto + 19 %, Leistungszeitraum im Einleitungstext. Cent→Euro nur in `billing/draft.ts`.
+- **Doppel-Schutz:** `billing_runs` (unique Firma+Monat); enthaltene Zeiten bekommen `billingRunId` und verschwinden aus der Vorschau. „Verwerfen" löscht den Lauf → `SET NULL` gibt die Zeiten frei (lexoffice-Entwurf manuell löschen).
+
+**Offen (Manuel):** erster echter Lauf, sobald der lexoffice-Key da ist — Vorschau prüfen, Entwurf erzeugen, in lexoffice kontrollieren.
+
+## Offene Punkte (Stand 17.07.2026)
 
 1. Go-Live auf dem Hetzner-VPS (siehe Deployment oben) — braucht Domain/DNS von Manuel
 2. Seed-Admin-Passwort ändern (Passwort-Ändern-UI fehlt noch — vorgemerkter Task)
 3. Entra-ID-App-Registrierung nach [entra-id-setup.md](entra-id-setup.md), dann `TICKET_SYNC=on` und Funktionstest mit echter Mail
-4. lexoffice-API-Key + `LEXOFFICE_SYNC=on` + Kontakt-IDs an Firmen pflegen
-5. Stufe 4+ (geparkt): Zeiten/Pauschalen → Rechnungsentwürfe, RMM-Alerts → Tickets
+4. lexoffice-API-Key + `LEXOFFICE_SYNC=on` + Kontakt-IDs an Firmen pflegen; danach ersten Abrechnungslauf testen
+5. Stufe 5+ (geparkt): RMM-/Monitoring-Alerts → Tickets (falls das RMM Alert-Mails an support@ senden kann, geht das schon heute über den Mail-Sync)

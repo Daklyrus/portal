@@ -9,6 +9,8 @@ PSA-Tool für Corvion: Kundenakte mit Firmen, Ansprechpartnern, Verträgen (inkl
 
 **Portal-Zugänge:** In der Kundenakte am Ansprechpartner „Portal-Zugang einladen" — der Kontakt erhält per Mail einen 48 h gültigen Link zum Passwort-Setzen und meldet sich danach unter derselben Login-Seite an.
 
+**Abrechnung:** Unter „Abrechnung" pro Monat und Firma Rechnungsentwürfe in lexoffice erzeugen (Vertragspauschalen + abrechenbare Zeiten × Stundensatz, netto + 19 %). Stundensatz: Standard auf der Abrechnungsseite, je Firma überschreibbar in der Akte. Abgerechnete Zeiten sind gesperrt; „Verwerfen" gibt sie frei (Entwurf in lexoffice dann manuell löschen). Festgeschrieben und versendet wird ausschließlich in lexoffice.
+
 ## Setup
 
 Voraussetzungen: Node 20+, Docker.
