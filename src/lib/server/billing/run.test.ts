@@ -59,9 +59,9 @@ describe('createBillingRun', () => {
 		const entries = await db.select().from(schema.timeEntries);
 		expect(entries[0].billingRunId).toBe(run.id);
 
-		// Firma verschwindet aus der offenen Vorschau (alreadyBilled)
+		// Firma hat keine offenen Posten mehr → verschwindet aus der Vorschau (Historie zeigt den Lauf)
 		const previews = await buildBillingPreview(db, MONTH);
-		expect(previews[0]?.alreadyBilled).toBe(true);
+		expect(previews.find((p) => p.company.id === companyId)).toBeUndefined();
 	});
 
 	it('verweigert doppel-läufe und firmen ohne lexoffice-zuordnung', async () => {
