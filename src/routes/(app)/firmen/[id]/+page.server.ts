@@ -33,8 +33,10 @@ import { contactSchema } from '$lib/validation/contact';
 import { contractSchema } from '$lib/validation/contract';
 import type { Actions, PageServerLoad } from './$types';
 
-// Eigene Instanz mit signUp-Erlaubnis — nur serverseitig für die Zugangs-Anlage genutzt
-const portalAuth = createAuth(db, { allowSignUp: true });
+// Eigene Instanz mit signUp-Erlaubnis — nur serverseitig für die Zugangs-Anlage.
+// requestCookies MUSS aus sein: signUpEmail loggt den neuen Nutzer ein, und mit
+// Cookie-Plugin würde die Session des angemeldeten Admins im Browser ersetzt.
+const portalAuth = createAuth(db, { allowSignUp: true, requestCookies: false });
 
 export const load: PageServerLoad = async ({ params }) => {
 	const company = await getCompany(db, params.id);

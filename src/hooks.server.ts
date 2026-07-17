@@ -1,4 +1,4 @@
-import type { Handle } from '@sveltejs/kit';
+import { redirect, type Handle } from '@sveltejs/kit';
 import { building } from '$app/environment';
 import { env } from '$env/dynamic/private';
 import { auth } from '$lib/server/auth';
@@ -25,12 +25,47 @@ if (!building && env.TICKET_SYNC === 'on') {
 	}
 }
 
+// Ohne Login erreichbar
+const PUBLIC_PATHS = ['/login', '/passwort', '/api/auth'];
+
+function isPublic(pathname: string): boolean {
+	return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+}
+
+/**
+ * Zentraler Zugriffs-Guard. WICHTIG: Layout-load-Guards greifen NICHT bei
+ * Form Actions — Authentifizierung und Rollentrennung müssen deshalb hier
+ * vor dem Routing durchgesetzt werden. Die Layout-Guards bleiben als zweite
+ * Verteidigungslinie bestehen.
+ */
 const handleBetterAuth: Handle = async ({ event, resolve }) => {
 	const session = await auth.api.getSession({ headers: event.request.headers });
 
 	if (session) {
 		event.locals.session = session.session;
 		event.locals.user = session.user;
+	}
+
+	const path = event.url.pathname;
+	if (!isPublic(path)) {
+		if (!session) redirect(302, '/login');
+
+		const isCustomer = session.user.role === 'customer';
+		const inPortal = path === '/portal' || path.startsWith('/portal/');
+		const isLogout = path === '/logout';
+
+		if (isCustomer && !inPortal && !isLogout) redirect(302, '/portal');
+		if (!isCustomer && inPortal) redirect(302, '/');
+
+		// Interne 2FA-Pflicht gilt auch für Actions
+		if (
+			!isCustomer &&
+			!session.user.twoFactorEnabled &&
+			!path.startsWith('/einstellungen/sicherheit') &&
+			!isLogout
+		) {
+			redirect(302, '/einstellungen/sicherheit');
+		}
 	}
 
 	return svelteKitHandler({ event, resolve, auth, building });
