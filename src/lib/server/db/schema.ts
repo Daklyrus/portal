@@ -67,6 +67,8 @@ export const contracts = pgTable('contracts', {
 	monthlyFeeCents: integer('monthly_fee_cents').default(0).notNull(),
 	includedServices: text('included_services'),
 	cancelledAt: date('cancelled_at', { mode: 'string' }),
+	// Stufe 3: Vertragsdaten im Kundenportal sichtbar
+	sharedWithCustomer: boolean('shared_with_customer').default(false).notNull(),
 	...timestamps
 });
 
@@ -159,6 +161,41 @@ export const timeEntries = pgTable('time_entries', {
 	createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
 });
 
+// Kundenportal: Login-Bindung Nutzer ↔ Ansprechpartner ↔ Firma
+export const portalAccess = pgTable('portal_access', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	userId: text('user_id')
+		.notNull()
+		.unique()
+		.references(() => user.id, { onDelete: 'cascade' }),
+	contactId: uuid('contact_id')
+		.notNull()
+		.unique()
+		.references(() => contacts.id, { onDelete: 'cascade' }),
+	companyId: uuid('company_id')
+		.notNull()
+		.references(() => companies.id, { onDelete: 'cascade' }),
+	createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
+});
+
+export const invoiceStatus = pgEnum('invoice_status', ['open', 'paid', 'overdue', 'voided']);
+
+// Rechnungs-Spiegel aus lexoffice (Sync, keine führenden Daten)
+export const invoices = pgTable('invoices', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	companyId: uuid('company_id')
+		.notNull()
+		.references(() => companies.id, { onDelete: 'cascade' }),
+	lexofficeId: text('lexoffice_id').notNull().unique(),
+	voucherNumber: text('voucher_number').notNull(),
+	voucherDate: date('voucher_date', { mode: 'string' }).notNull(),
+	dueDate: date('due_date', { mode: 'string' }),
+	totalCents: integer('total_cents').notNull(),
+	currency: text('currency').default('EUR').notNull(),
+	status: invoiceStatus('status').notNull(),
+	updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull()
+});
+
 // Key-Value-Ablage für Graph-Delta-Links des Ticket-Syncs
 export const syncState = pgTable('sync_state', {
 	key: text('key').primaryKey(),
@@ -183,5 +220,9 @@ export type TimeEntry = typeof timeEntries.$inferSelect;
 export type NewTimeEntry = typeof timeEntries.$inferInsert;
 export type TicketStatus = Ticket['status'];
 export type TicketPriority = Ticket['priority'];
+export type PortalAccess = typeof portalAccess.$inferSelect;
+export type Invoice = typeof invoices.$inferSelect;
+export type NewInvoice = typeof invoices.$inferInsert;
+export type InvoiceStatus = Invoice['status'];
 
 export * from './auth.schema';
