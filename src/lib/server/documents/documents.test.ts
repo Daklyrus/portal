@@ -24,7 +24,8 @@ beforeEach(async () => {
 		email: null,
 		phone: null,
 		website: null,
-		notes: null
+		notes: null,
+		lexofficeContactId: null
 	});
 	companyId = company.id;
 });

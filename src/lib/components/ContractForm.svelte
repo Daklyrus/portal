@@ -155,6 +155,15 @@
 				>{values.description ?? ''}</textarea
 			>
 		</div>
+		<label class="flex items-center gap-2 text-sm sm:col-span-2">
+			<input
+				type="checkbox"
+				name="sharedWithCustomer"
+				checked={values.sharedWithCustomer === 'on'}
+				class="rounded border-border text-accent focus:ring-accent"
+			/>
+			Im Portal sichtbar (Laufzeit, Leistungen und Pauschale für den Kunden)
+		</label>
 	</div>
 	<div class="mt-4 flex gap-2">
 		<button

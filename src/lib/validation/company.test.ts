@@ -46,3 +46,11 @@ describe('companySchema', () => {
 		expect(result.notes).toBeNull();
 	});
 });
+
+describe('companySchema lexoffice', () => {
+	it('akzeptiert eine optionale lexoffice-kontakt-id', () => {
+		const result = companySchema.parse({ name: 'X GmbH', lexofficeContactId: ' abc-123 ' });
+		expect(result.lexofficeContactId).toBe('abc-123');
+		expect(companySchema.parse({ name: 'X GmbH' }).lexofficeContactId).toBeNull();
+	});
+});

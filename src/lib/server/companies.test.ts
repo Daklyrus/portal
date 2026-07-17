@@ -27,7 +27,8 @@ const input = {
 	email: null,
 	phone: null,
 	website: null,
-	notes: null
+	notes: null,
+	lexofficeContactId: null
 };
 
 describe('companies serverlogik', () => {
